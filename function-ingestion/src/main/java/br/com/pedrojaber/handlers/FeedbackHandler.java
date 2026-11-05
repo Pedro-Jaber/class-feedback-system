@@ -8,6 +8,7 @@ import br.com.pedrojaber.dto.request.AvaliacaoRequest;
 import br.com.pedrojaber.dto.response.AvaliacaoResponse;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 
@@ -16,6 +17,11 @@ public class FeedbackHandler {
 
     @Inject
     private CreateFeedbackUseCase createFeedbackUseCase;
+
+    @GET
+    public String healthCheck() {
+        return "OK";
+    }
 
     @POST
     public RestResponse<AvaliacaoResponse> create(@Valid AvaliacaoRequest avaliacaoRequest) {

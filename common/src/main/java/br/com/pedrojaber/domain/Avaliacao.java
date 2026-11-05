@@ -40,6 +40,10 @@ public class Avaliacao {
                 Instant.now());
     }
 
+    public static Avaliacao restore(String id, String descricao, int nota, Urgencia urgencia, Instant dataEnvio) {
+        return new Avaliacao(id, descricao, nota, urgencia, dataEnvio);
+    }
+
     public boolean requireNotification() {
         return urgencia == Urgencia.ALTA;
     }

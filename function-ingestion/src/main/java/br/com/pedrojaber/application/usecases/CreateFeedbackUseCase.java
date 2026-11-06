@@ -1,6 +1,7 @@
 package br.com.pedrojaber.application.usecases;
 
 import br.com.pedrojaber.application.gateway.IFeedbackGateway;
+import br.com.pedrojaber.application.messaging.IFeedbackNotificationPublisher;
 import br.com.pedrojaber.domain.Feedback;
 import br.com.pedrojaber.dto.request.FeedbackRequest;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -12,6 +13,9 @@ public class CreateFeedbackUseCase {
     @Inject
     IFeedbackGateway feedbackGateway;
 
+    @Inject
+    IFeedbackNotificationPublisher feedbackNotificationPublisher;
+
     public Feedback run(FeedbackRequest feedbackRequest) {
 
         Feedback feedback = Feedback.create(
@@ -20,7 +24,9 @@ public class CreateFeedbackUseCase {
 
         Feedback savedFeedback = feedbackGateway.save(feedback);
 
-        // TODO: publish event if urgency is HIGH
+        if (feedback.requireNotification()) {
+            feedbackNotificationPublisher.publishHighUrgencyFeedback(savedFeedback);
+        }
 
         return savedFeedback;
     }

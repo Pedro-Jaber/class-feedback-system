@@ -3,9 +3,9 @@ package br.com.pedrojaber.handlers;
 import org.jboss.resteasy.reactive.RestResponse;
 
 import br.com.pedrojaber.application.usecases.CreateFeedbackUseCase;
-import br.com.pedrojaber.domain.Avaliacao;
-import br.com.pedrojaber.dto.request.AvaliacaoRequest;
-import br.com.pedrojaber.dto.response.AvaliacaoResponse;
+import br.com.pedrojaber.domain.Feedback;
+import br.com.pedrojaber.dto.request.FeedbackRequest;
+import br.com.pedrojaber.dto.response.FeedbackResponse;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.GET;
@@ -24,13 +24,13 @@ public class FeedbackHandler {
     }
 
     @POST
-    public RestResponse<AvaliacaoResponse> create(@Valid AvaliacaoRequest avaliacaoRequest) {
+    public RestResponse<FeedbackResponse> create(@Valid FeedbackRequest feedbackRequest) {
 
-        Avaliacao savedAvaliacao = createFeedbackUseCase.run(avaliacaoRequest);
+        Feedback savedFeedback = createFeedbackUseCase.run(feedbackRequest);
 
         return RestResponse.status(
                 RestResponse.Status.CREATED,
-                AvaliacaoResponse.from(savedAvaliacao));
+                FeedbackResponse.from(savedFeedback));
     }
 
 }

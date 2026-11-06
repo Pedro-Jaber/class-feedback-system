@@ -11,7 +11,7 @@ public class NotificationHandler implements RequestHandler<SNSEvent, Void> {
 
     @Override
     public Void handleRequest(SNSEvent event, Context context) {
-        // lógica da função
+        // function logic
         return null;
     }
 }

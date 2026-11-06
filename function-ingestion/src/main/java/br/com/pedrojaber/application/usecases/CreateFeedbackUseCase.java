@@ -1,8 +1,8 @@
 package br.com.pedrojaber.application.usecases;
 
-import br.com.pedrojaber.application.gateway.IAvaliacaoGateway;
-import br.com.pedrojaber.domain.Avaliacao;
-import br.com.pedrojaber.dto.request.AvaliacaoRequest;
+import br.com.pedrojaber.application.gateway.IFeedbackGateway;
+import br.com.pedrojaber.domain.Feedback;
+import br.com.pedrojaber.dto.request.FeedbackRequest;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -10,19 +10,19 @@ import jakarta.inject.Inject;
 public class CreateFeedbackUseCase {
 
     @Inject
-    IAvaliacaoGateway avaliacaoGateway;
+    IFeedbackGateway feedbackGateway;
 
-    public Avaliacao run(AvaliacaoRequest avaliacaoRequest) {
+    public Feedback run(FeedbackRequest feedbackRequest) {
 
-        Avaliacao avaliacao = Avaliacao.create(
-                avaliacaoRequest.descricao(),
-                avaliacaoRequest.nota());
+        Feedback feedback = Feedback.create(
+                feedbackRequest.description(),
+                feedbackRequest.grade());
 
-        Avaliacao savedAvaliacao = avaliacaoGateway.save(avaliacao);
-        
-        // TODO: publicar evento se ALTA
+        Feedback savedFeedback = feedbackGateway.save(feedback);
 
-        return savedAvaliacao;
+        // TODO: publish event if urgency is HIGH
+
+        return savedFeedback;
     }
 
 }

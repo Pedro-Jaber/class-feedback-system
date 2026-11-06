@@ -11,7 +11,7 @@ public class ReportHandler implements RequestHandler<Object, Void> {
 
     @Override
     public Void handleRequest(Object event, Context context) {
-        // lógica da função
+        // function logic
         return null;
     }
 }

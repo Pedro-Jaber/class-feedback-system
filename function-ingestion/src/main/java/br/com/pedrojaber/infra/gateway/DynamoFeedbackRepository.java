@@ -1,13 +1,13 @@
 package br.com.pedrojaber.infra.gateway;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Map;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import br.com.pedrojaber.application.gateway.IFeedbackGateway;
 import br.com.pedrojaber.domain.Feedback;
+import br.com.pedrojaber.time.TimeZones;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -26,7 +26,7 @@ public class DynamoFeedbackRepository implements IFeedbackGateway {
     @Override
     public Feedback save(Feedback feedback) {
 
-        var submissionDay = LocalDate.ofInstant(feedback.getSubmissionDate(), ZoneId.of("America/Sao_Paulo")).toString();
+        var submissionDay = LocalDate.ofInstant(feedback.getSubmissionDate(), TimeZones.BRAZIL).toString();
 
         Map<String, AttributeValue> item = Map.of(
                 "PK", AttributeValue.fromS(submissionDay),

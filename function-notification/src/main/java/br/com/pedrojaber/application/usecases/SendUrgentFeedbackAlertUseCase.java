@@ -1,21 +1,14 @@
 package br.com.pedrojaber.application.usecases;
 
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-
 import br.com.pedrojaber.application.gateway.IEmailSender;
-import br.com.pedrojaber.domain.Urgency;
 import br.com.pedrojaber.messaging.UrgentFeedbackEvent;
+import br.com.pedrojaber.time.TimeZones;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class SendUrgentFeedbackAlertUseCase {
 
     private static final String SUBJECT = "[URGENTE] Nova avaliação crítica recebida";
-
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter
-            .ofPattern("dd/MM/yyyy HH:mm")
-            .withZone(ZoneId.of("America/Sao_Paulo"));
 
     private IEmailSender emailSender;
 
@@ -38,19 +31,10 @@ public class SendUrgentFeedbackAlertUseCase {
 
                 ID da avaliação: %s
                 """.formatted(
-                label(event.urgency()),
+                event.urgency().getLabel(),
                 event.description(),
-                label(event.urgency()),
-                DATE_FORMATTER.format(event.submissionDate()),
+                event.urgency().getLabel(),
+                TimeZones.BRAZIL_DATE_TIME.format(event.submissionDate()),
                 event.id());
-    }
-
-    private Object label(Urgency urgency) {
-        return switch (urgency) {
-            case HIGH -> "ALTA";
-            case MEDIUM -> "MÉDIA";
-            case LOW -> "BAIXA";
-            default -> throw new IllegalArgumentException("Unexpected value: " + urgency);
-        };
     }
 }

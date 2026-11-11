@@ -229,6 +229,9 @@ README.html
 .idea
 .exercism
 
+# AWS
+samconfig.toml
+
 # Local environment
 .env
 env.json

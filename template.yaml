@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Class Feedback System - plataforma serverless de feedback de aulas (FIAP Tech Challenge - Fase 4)
+
+# ---------------------------------------------------------------------------
+# Parâmetros
+# ---------------------------------------------------------------------------
+Parameters:
+  EmailSender:
+    Type: String
+    Description: E-mail remetente (identidade verificada no SES)
+  AdminEmails:
+    Type: String
+    Description: E-mails dos administradores, separados por vírgula
+  AlarmEmail:
+    Type: String
+    Description: E-mail que recebe os alarmes do CloudWatch
+
+# ---------------------------------------------------------------------------
+# Configurações comuns
+# ---------------------------------------------------------------------------
+Globals:
+  Function:
+    Runtime: provided.al2023
+    Handler: not.used.in.provided.runtime
+    Architectures: [x86_64]
+    MemorySize: 256
+    Timeout: 15
+    Environment:
+      Variables:
+        DISABLE_SIGNAL_HANDLERS: true
+
+Resources:
+  # ------------------------------- Dados ----------------------------------
+  FeedbackTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      SSESpecification:
+        SSEEnabled: true                 
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  # ----------------------------- Mensageria -------------------------------
+  UrgentFeedbackTopic:
+    Type: AWS::SNS::Topic
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlarmEmail
+
+  # -------------------------------- API -----------------------------------
+  FeedbackHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 20
+        ThrottlingRateLimit: 10
+
+  # ------------------------------ Funções ---------------------------------
+  IngestionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Recebe avaliações via HTTP, grava no DynamoDB e publica as urgentes no SNS
+      CodeUri: function-ingestion/target/function.zip
+      Environment:
+        Variables:
+          FEEDBACK_TABLE: !Ref FeedbackTable
+          URGENT_FEEDBACK_TOPIC_ARN: !Ref UrgentFeedbackTopic
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: dynamodb:PutItem
+              Resource: !GetAtt FeedbackTable.Arn
+            - Effect: Allow
+              Action: sns:Publish
+              Resource: !Ref UrgentFeedbackTopic
+      Events:
+        PostAvaliacao:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref FeedbackHttpApi
+            Path: /avaliacao
+            Method: POST
+
+  NotificationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Envia e-mail aos administradores quando chega uma avaliação urgente
+      CodeUri: function-notification/target/function.zip
+      Environment:
+        Variables:
+          EMAIL_SENDER: !Ref EmailSender
+          ADMIN_EMAILS: !Ref AdminEmails
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: ses:SendEmail
+              Resource: !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*
+      Events:
+        UrgentFeedback:
+          Type: SNS
+          Properties:
+            Topic: !Ref UrgentFeedbackTopic
+
+  ReportFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Gera e envia por e-mail o relatório semanal das avaliações
+      CodeUri: function-report/target/function.zip
+      Timeout: 30
+      Environment:
+        Variables:
+          FEEDBACK_TABLE: !Ref FeedbackTable
+          EMAIL_SENDER: !Ref EmailSender
+          ADMIN_EMAILS: !Ref AdminEmails
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: dynamodb:Query
+              Resource: !GetAtt FeedbackTable.Arn
+            - Effect: Allow
+              Action: ses:SendEmail
+              Resource: !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*
+      Events:
+        WeeklySchedule:
+          Type: ScheduleV2
+          Properties:
+            Description: Relatório semanal - segunda-feira às 08:00 (Brasília)
+            ScheduleExpression: cron(0 8 ? * MON *)
+            ScheduleExpressionTimezone: America/Sao_Paulo
+
+# ---------------------------------------------------------------------------
+Outputs:
+  ApiUrl:
+    Description: Endpoint para envio de avaliações
+    Value: !Sub https://${FeedbackHttpApi}.execute-api.${AWS::Region}.amazonaws.com/avaliacao
+  FeedbackTableName:
+    Value: !Ref FeedbackTable
+  UrgentFeedbackTopicArn:
+    Value: !Ref UrgentFeedbackTopic
+  AlarmTopicArn:
+    Value: !Ref AlarmTopic
+  ReportFunctionName:
+    Description: Disparo manual do relatório semanal
+    Value: !Ref ReportFunction

@@ -231,7 +231,9 @@ README.html
 
 # Local environment
 .env
+env.json
 
+/events
 test.txt
 /old/
 tc_docs/

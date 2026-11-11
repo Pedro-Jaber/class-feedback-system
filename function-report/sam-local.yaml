@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Teste local - function-report (nativo)
+
+Resources:
+  FunctionReportNative:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: not.used.in.provided.runtime
+      Runtime: provided.al2023
+      Architectures: [x86_64]
+      CodeUri: target/function.zip
+      MemorySize: 256
+      Timeout: 30
+      Environment:
+        Variables:
+          DISABLE_SIGNAL_HANDLERS: true
+          FEEDBACK_TABLE: ""
+          EMAIL_SENDER: ""
+          ADMIN_EMAILS: ""

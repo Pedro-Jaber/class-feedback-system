@@ -31,6 +31,103 @@ Globals:
         DISABLE_SIGNAL_HANDLERS: true
 
 Resources:
+  # ---------------------------- Monitoramento -----------------------------
+  IngestionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /${AWS::StackName}/ingestion
+      RetentionInDays: 14
+
+  NotificationLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /${AWS::StackName}/notification
+      RetentionInDays: 14
+
+  ReportLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /${AWS::StackName}/report
+      RetentionInDays: 14
+
+  # ------------------------------- Alarmes --------------------------------
+
+  IngestionErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-ingestion-errors
+      AlarmDescription: Falha na execução da função de ingestão
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref IngestionFunction
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]      
+
+  Api5xxAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+          AlarmName: !Sub ${AWS::StackName}-api-5xx
+          AlarmDescription: A API de avaliações retornou erro 5xx
+          Namespace: AWS/ApiGateway
+          MetricName: 5xx
+          Dimensions:
+            - Name: ApiId
+              Value: !Ref FeedbackHttpApi
+          Statistic: Sum
+          Period: 60
+          EvaluationPeriods: 1
+          Threshold: 0
+          ComparisonOperator: GreaterThanThreshold
+          TreatMissingData: notBreaching
+          AlarmActions: [!Ref AlarmTopic]
+          OKActions: [!Ref AlarmTopic]
+
+  ReportErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-report-errors
+      AlarmDescription: Falha na execução da função de ingestão
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ReportFunction
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]   
+
+  NotificationErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${AWS::StackName}-notification-errors
+      AlarmDescription: Falha na execução da função de ingestão
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref NotificationFunction
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+      OKActions: [!Ref AlarmTopic]  
+
   # ------------------------------- Dados ----------------------------------
   FeedbackTable:
     Type: AWS::DynamoDB::Table
@@ -76,6 +173,8 @@ Resources:
     Properties:
       Description: Recebe avaliações via HTTP, grava no DynamoDB e publica as urgentes no SNS
       CodeUri: function-ingestion/target/function.zip
+      LoggingConfig:
+        LogGroup: !Ref IngestionLogGroup
       Environment:
         Variables:
           FEEDBACK_TABLE: !Ref FeedbackTable
@@ -102,6 +201,8 @@ Resources:
     Properties:
       Description: Envia e-mail aos administradores quando chega uma avaliação urgente
       CodeUri: function-notification/target/function.zip
+      LoggingConfig:
+        LogGroup: !Ref NotificationLogGroup
       Environment:
         Variables:
           EMAIL_SENDER: !Ref EmailSender
@@ -116,7 +217,7 @@ Resources:
         UrgentFeedback:
           Type: SNS
           Properties:
-            Topic: !Ref UrgentFeedbackTopic
+            Topic: !Ref UrgentFeedbackTopic 
 
   ReportFunction:
     Type: AWS::Serverless::Function
@@ -124,6 +225,8 @@ Resources:
       Description: Gera e envia por e-mail o relatório semanal das avaliações
       CodeUri: function-report/target/function.zip
       Timeout: 30
+      LoggingConfig:
+        LogGroup: !Ref ReportLogGroup
       Environment:
         Variables:
           FEEDBACK_TABLE: !Ref FeedbackTable
@@ -145,6 +248,9 @@ Resources:
             Description: Relatório semanal - segunda-feira às 08:00 (Brasília)
             ScheduleExpression: cron(0 8 ? * MON *)
             ScheduleExpressionTimezone: America/Sao_Paulo
+
+
+
 
 # ---------------------------------------------------------------------------
 Outputs:

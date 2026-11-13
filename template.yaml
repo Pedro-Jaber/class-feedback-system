@@ -195,6 +195,12 @@ Resources:
             ApiId: !Ref FeedbackHttpApi
             Path: /avaliacao
             Method: POST
+        GetHealthCheck:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref FeedbackHttpApi
+            Path: /avaliacao
+            Method: GET
 
   NotificationFunction:
     Type: AWS::Serverless::Function
@@ -248,9 +254,6 @@ Resources:
             Description: Relatório semanal - segunda-feira às 08:00 (Brasília)
             ScheduleExpression: cron(0 8 ? * MON *)
             ScheduleExpressionTimezone: America/Sao_Paulo
-
-
-
 
 # ---------------------------------------------------------------------------
 Outputs:

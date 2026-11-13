@@ -94,7 +94,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: !Sub ${AWS::StackName}-report-errors
-      AlarmDescription: Falha na execução da função de ingestão
+      AlarmDescription: Falha na execução da função de relatório
       Namespace: AWS/Lambda
       MetricName: Errors
       Dimensions:
@@ -113,7 +113,7 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmName: !Sub ${AWS::StackName}-notification-errors
-      AlarmDescription: Falha na execução da função de ingestão
+      AlarmDescription: Falha na execução da função de notificação
       Namespace: AWS/Lambda
       MetricName: Errors
       Dimensions:
